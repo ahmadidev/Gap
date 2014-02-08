@@ -7,3 +7,6 @@ sedamiyad
 بايد درست کنيم اين مورد رو
 
 وگرنه يه فايل صد خطي رو کاميت ميکنيم، بعدش ميبيني شده يه خط
+
+OK, seems it is fixed.
+thanks Hossein.
