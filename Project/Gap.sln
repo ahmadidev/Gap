@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gap.Win", "Gap.Win\Gap.Win.csproj", "{5083FCDA-B7BD-4139-A203-FB6A6AD4AB05}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gap.Server", "Gap.Server\Gap.Server.csproj", "{C3B87310-CD5A-4CF0-8A94-945617561680}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{5083FCDA-B7BD-4139-A203-FB6A6AD4AB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5083FCDA-B7BD-4139-A203-FB6A6AD4AB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5083FCDA-B7BD-4139-A203-FB6A6AD4AB05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3B87310-CD5A-4CF0-8A94-945617561680}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3B87310-CD5A-4CF0-8A94-945617561680}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3B87310-CD5A-4CF0-8A94-945617561680}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3B87310-CD5A-4CF0-8A94-945617561680}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
