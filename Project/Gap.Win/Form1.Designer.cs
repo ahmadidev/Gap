@@ -35,6 +35,7 @@
             this.lblOnlineUsers = new System.Windows.Forms.Label();
             this.lbLogs = new System.Windows.Forms.ListBox();
             this.lblLog = new System.Windows.Forms.Label();
+            this.btnDisconnect = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnConnect
@@ -45,6 +46,7 @@
             this.btnConnect.TabIndex = 0;
             this.btnConnect.Text = "Connect";
             this.btnConnect.UseVisualStyleBackColor = true;
+            this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
             // 
             // txtUsername
             // 
@@ -96,11 +98,22 @@
             this.lblLog.TabIndex = 6;
             this.lblLog.Text = "Log:";
             // 
+            // btnDisconnect
+            // 
+            this.btnDisconnect.Location = new System.Drawing.Point(197, 41);
+            this.btnDisconnect.Name = "btnDisconnect";
+            this.btnDisconnect.Size = new System.Drawing.Size(75, 23);
+            this.btnDisconnect.TabIndex = 7;
+            this.btnDisconnect.Text = "Disconnect";
+            this.btnDisconnect.UseVisualStyleBackColor = true;
+            this.btnDisconnect.Click += new System.EventHandler(this.btnDisconnect_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 348);
+            this.Controls.Add(this.btnDisconnect);
             this.Controls.Add(this.lblLog);
             this.Controls.Add(this.lbLogs);
             this.Controls.Add(this.lblOnlineUsers);
@@ -125,6 +138,7 @@
         private System.Windows.Forms.Label lblOnlineUsers;
         private System.Windows.Forms.ListBox lbLogs;
         private System.Windows.Forms.Label lblLog;
+        private System.Windows.Forms.Button btnDisconnect;
 
     }
 }
