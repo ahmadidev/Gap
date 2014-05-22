@@ -10,6 +10,7 @@ using System.Windows.Forms;
 
 namespace Gap.Win
 {
+    using System.Diagnostics;
     using System.Net;
     using System.Net.Sockets;
     using System.Windows.Forms.VisualStyles;
@@ -68,12 +69,20 @@ namespace Gap.Win
 
         private static string[] GetOnlineUsers(Socket serverSocket)
         {
+            Debug.WriteLine("GetOnlineUsers");
+
             byte[] buffer;
             buffer = Encoding.ASCII.GetBytes(MakeCommand("getOnlineUsers", string.Empty));
-            serverSocket.Send(buffer);
-            serverSocket.Receive(buffer);
 
-            string[] onlineUsers = Encoding.ASCII.GetString(buffer).Split(';').Where(x => !string.IsNullOrEmpty(x)).ToArray();
+            Debug.WriteLine("Send");
+            serverSocket.Send(buffer);
+
+            buffer = new byte[1024];
+
+            Debug.WriteLine("Receive");
+            int receivedLength = serverSocket.Receive(buffer);
+
+            string[] onlineUsers = Encoding.ASCII.GetString(buffer, 0, receivedLength).Split(';').Where(x => !string.IsNullOrEmpty(x)).ToArray();
             return onlineUsers;
         }
 

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Gap.Server
 {
+    using System.Diagnostics;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
@@ -94,6 +95,8 @@ namespace Gap.Server
 
         public void SendOnlineUsers()
         {
+            Debug.WriteLine("SendOnlineUsers");
+
             StringBuilder stringBuilder = new StringBuilder();
 
             foreach (var onlineUser in OnlineUsers)
@@ -103,16 +106,20 @@ namespace Gap.Server
 
             byte[] buffer = Encoding.ASCII.GetBytes(stringBuilder.ToString());
 
+            Debug.WriteLine("Send");
             Socket.Send(buffer);
         }
 
         public void ProcessRequest()
         {
+            Debug.WriteLine("ProcessRequest");
+
             byte[] buffer = new byte[1024];
 
-            this.Socket.Receive(buffer, SocketFlags.None);
+            Debug.WriteLine("Receive");
+            int messageLength = this.Socket.Receive(buffer, SocketFlags.None);
 
-            string[] requestParts = Encoding.ASCII.GetString(buffer).Split(';');
+            string[] requestParts = Encoding.ASCII.GetString(buffer, 0, messageLength).Split(';');
 
             string
                 requestName = requestParts[0],
