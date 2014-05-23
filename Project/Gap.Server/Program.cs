@@ -93,30 +93,27 @@ namespace Gap.Server
             this.Status = UserStatus.Loggedout;
         }
 
-        public void SendOnlineUsers()
+        public string SendOnlineUsers()
         {
-            Debug.WriteLine("SendOnlineUsers");
-
             StringBuilder stringBuilder = new StringBuilder();
 
-            foreach (var onlineUser in OnlineUsers)
+            var onlineUsers = OnlineUsers.Where(x => x.Name != this.Name).ToList();
+
+            if (!onlineUsers.Any())
+                return "empty";
+
+            foreach (var onlineUser in onlineUsers)
             {
                 stringBuilder.Append(onlineUser.Name + ';');
             }
 
-            byte[] buffer = Encoding.ASCII.GetBytes(stringBuilder.ToString());
-
-            Debug.WriteLine("Send");
-            Socket.Send(buffer);
+            return stringBuilder.ToString().TrimEnd(';');
         }
 
         public void ProcessRequest()
         {
-            Debug.WriteLine("ProcessRequest");
-
             byte[] buffer = new byte[1024];
 
-            Debug.WriteLine("Receive");
             int messageLength = this.Socket.Receive(buffer, SocketFlags.None);
 
             string[] requestParts = Encoding.ASCII.GetString(buffer, 0, messageLength).Split(';');
@@ -125,18 +122,25 @@ namespace Gap.Server
                 requestName = requestParts[0],
                 requestParameter = requestParts[1];
 
+            string response = "OK";
+
             switch (requestName)
             {
                 case "login":
                     this.Login(requestParameter);
                     break;
                 case "getOnlineUsers":
-                    this.SendOnlineUsers();
+                    response = this.SendOnlineUsers();
                     break;
                 case "logout":
                     this.Logout();
                     break;
             }
+
+
+            buffer = Encoding.ASCII.GetBytes(response);
+
+            Socket.Send(buffer);
         }
 
         public void Dispose()

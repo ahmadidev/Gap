@@ -13,6 +13,7 @@ namespace Gap.Win
     using System.Diagnostics;
     using System.Net;
     using System.Net.Sockets;
+    using System.Threading;
     using System.Windows.Forms.VisualStyles;
 
     public partial class Form1 : Form
@@ -36,11 +37,8 @@ namespace Gap.Win
 
             serverSocket = Connect();
 
-            Login(name, serverSocket);
+            Login(name);
 
-            var onlineUsers = GetOnlineUsers(serverSocket);
-
-            this.DisplayOnlineUsers(onlineUsers);
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
@@ -48,8 +46,32 @@ namespace Gap.Win
             this.Logout();
         }
 
+        private void UpdateOnlineUsersThreadMethod()
+        {
+            while (true)
+            {
+                this.UpdateOnlineUsers();
+
+                Thread.Sleep(500);
+            }
+        }
+
+        private void UpdateOnlineUsers()
+        {
+            var onlineUsers = GetOnlineUsers();
+
+            this.DisplayOnlineUsers(onlineUsers);
+        }
+
         private void DisplayOnlineUsers(string[] onlineUsers)
         {
+            if (lbOnlineUsers.InvokeRequired)
+            {
+                lbOnlineUsers.Invoke(new MethodInvoker(() => this.DisplayOnlineUsers(onlineUsers)));
+                return;
+            }
+
+            lbOnlineUsers.Items.Clear();
             foreach (var onlineUserName in onlineUsers)
             {
                 this.lbOnlineUsers.Items.Add(onlineUserName);
@@ -67,29 +89,21 @@ namespace Gap.Win
             return serverSocket;
         }
 
-        private static string[] GetOnlineUsers(Socket serverSocket)
+        private string[] GetOnlineUsers()
         {
-            Debug.WriteLine("GetOnlineUsers");
+            string response = this.SendRequest(MakeCommand("getOnlineUsers", string.Empty));
 
-            byte[] buffer;
-            buffer = Encoding.ASCII.GetBytes(MakeCommand("getOnlineUsers", string.Empty));
+            if (response == "empty")
+                return new string[0];
 
-            Debug.WriteLine("Send");
-            serverSocket.Send(buffer);
+            string[] onlineUsers = response.Split(';').Where(x => !string.IsNullOrEmpty(x)).ToArray();
 
-            buffer = new byte[1024];
-
-            Debug.WriteLine("Receive");
-            int receivedLength = serverSocket.Receive(buffer);
-
-            string[] onlineUsers = Encoding.ASCII.GetString(buffer, 0, receivedLength).Split(';').Where(x => !string.IsNullOrEmpty(x)).ToArray();
             return onlineUsers;
         }
 
-        private static void Login(string name, Socket serverSocket)
+        private void Login(string name)
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(MakeCommand("login", name));
-            serverSocket.Send(buffer);
+            this.SendRequest(MakeCommand("login", name));
         }
 
         private void Logout()
@@ -101,6 +115,21 @@ namespace Gap.Win
         private static string MakeCommand(string name, string param)
         {
             return string.Format("{0};{1}", name, param);
+        }
+
+        private string SendRequest(string request)
+        {
+            byte[] buffer = Encoding.ASCII.GetBytes(request);
+
+            serverSocket.Send(buffer);
+
+            buffer = new byte[1024];
+
+            int receivedLength = serverSocket.Receive(buffer);
+
+            string response = Encoding.ASCII.GetString(buffer, 0, receivedLength);
+
+            return response;
         }
     }
 }
