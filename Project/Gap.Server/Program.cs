@@ -93,7 +93,7 @@ namespace Gap.Server
             this.Status = UserStatus.Loggedout;
         }
 
-        public string SendOnlineUsers()
+        public string GetOnlineUsers()
         {
             StringBuilder stringBuilder = new StringBuilder();
 
@@ -130,7 +130,7 @@ namespace Gap.Server
                     this.Login(requestParameter);
                     break;
                 case "getOnlineUsers":
-                    response = this.SendOnlineUsers();
+                    response = this.GetOnlineUsers();
                     break;
                 case "logout":
                     this.Logout();

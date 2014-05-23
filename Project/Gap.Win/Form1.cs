@@ -39,6 +39,7 @@ namespace Gap.Win
 
             Login(name);
 
+            new Thread(this.UpdateOnlineUsersThreadMethod).Start();
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
