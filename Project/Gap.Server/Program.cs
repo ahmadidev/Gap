@@ -145,8 +145,8 @@ namespace Gap.Server
 
         public void Dispose()
         {
-            Socket.Close();
             Socket.Shutdown(SocketShutdown.Both);
+            Socket.Close();
         }
     }
 }
