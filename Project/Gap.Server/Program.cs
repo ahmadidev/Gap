@@ -46,7 +46,10 @@ namespace Gap.Server
                     user.ProcessRequest();
                 }
                 while (user.Status != User.UserStatus.Loggedout);
+
+                Console.WriteLine("{0} is disconnected.", user.Name);
             }
+
         }
     }
 
@@ -83,6 +86,8 @@ namespace Gap.Server
 
             var user = OnlineUsers.Single(x => Equals(x.Socket, this.Socket));
             user.Name = name;
+
+            Console.WriteLine("{0} is loggedin.", user.Name);
         }
 
         public void Logout()

@@ -29,6 +29,11 @@ namespace Gap.Win
         {
         }
 
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            this.Logout();
+        }
+
         private Socket serverSocket;
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -39,7 +44,9 @@ namespace Gap.Win
 
             Login(name);
 
-            new Thread(this.UpdateOnlineUsersThreadMethod).Start();
+            UpdateOnlineUsers();
+
+            //new Thread(this.UpdateOnlineUsersThreadMethod).Start();
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
@@ -109,8 +116,7 @@ namespace Gap.Win
 
         private void Logout()
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(MakeCommand("logout", string.Empty));
-            this.serverSocket.Send(buffer);
+            this.SendRequest(MakeCommand("logout", string.Empty));
         }
 
         private static string MakeCommand(string name, string param)
