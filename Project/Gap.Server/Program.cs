@@ -67,14 +67,14 @@ namespace Gap.Server
 
         public string Name { get; set; }
 
-        public Socket Socket { get; set; }
+        public Socket ClientTransmitterSocket { get; set; }
 
         public UserStatus Status { get; set; }
 
         public User(Socket socket)
         {
             this.Status = UserStatus.Connected;
-            this.Socket = socket;
+            this.ClientTransmitterSocket = socket;
 
             OnlineUsers.Add(this);
         }
@@ -84,10 +84,13 @@ namespace Gap.Server
             this.Status = UserStatus.Loggedin;
             this.Name = name;
 
-            var user = OnlineUsers.Single(x => Equals(x.Socket, this.Socket));
+            var user = OnlineUsers.Single(x => Equals(x.ClientTransmitterSocket, this.ClientTransmitterSocket));
             user.Name = name;
 
             Console.WriteLine("{0} is loggedin.", user.Name);
+
+            //Test notify!
+            this.SendNotifyToClient(MakeNotifyCommand("debug", "You are now Online!\nWelcome my good client... :)"));
         }
 
         public void Logout()
@@ -96,6 +99,12 @@ namespace Gap.Server
             OnlineUsers.Remove(user);
 
             this.Status = UserStatus.Loggedout;
+
+
+            //Send bye notify!
+            this.SendNotifyToClient(MakeNotifyCommand("bye", ""));
+
+            CloseNotifyChannel();
         }
 
         public string GetOnlineUsers()
@@ -119,7 +128,7 @@ namespace Gap.Server
         {
             byte[] buffer = new byte[1024];
 
-            int messageLength = this.Socket.Receive(buffer, SocketFlags.None);
+            int messageLength = this.ClientTransmitterSocket.Receive(buffer, SocketFlags.None);
 
             string[] requestParts = Encoding.ASCII.GetString(buffer, 0, messageLength).Split(';');
 
@@ -140,18 +149,61 @@ namespace Gap.Server
                 case "logout":
                     this.Logout();
                     break;
+                case "IntroReceiverPort":
+                    int clientReceiverPort = int.Parse(requestParameter);
+                    ConnectToClient(clientReceiverPort);
+                    break;
             }
 
 
             buffer = Encoding.ASCII.GetBytes(response);
 
-            Socket.Send(buffer);
+            ClientTransmitterSocket.Send(buffer);
+        }
+
+        //Notify
+
+        public Socket ClientReceiverSocket { get; set; }
+
+        private void ConnectToClient(int clientReceiverPort)
+        {
+            IPAddress clientReceiverSocketIp = ((IPEndPoint)this.ClientTransmitterSocket.LocalEndPoint).Address;
+            IPEndPoint clientReceiverSocketIpEndPoint = new IPEndPoint(clientReceiverSocketIp, clientReceiverPort);
+
+            this.ClientReceiverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            this.ClientReceiverSocket.Connect(clientReceiverSocketIpEndPoint);
+        }
+
+        private static string MakeNotifyCommand(string name, string param)
+        {
+            return string.Format("{0};{1}", name, param);
+        }
+
+        private string SendNotifyToClient(string notifyCommand)
+        {
+            byte[] buffer = Encoding.ASCII.GetBytes(notifyCommand);
+
+            this.ClientReceiverSocket.Send(buffer);
+
+            buffer = new byte[1024];
+
+            int receivedLength = this.ClientReceiverSocket.Receive(buffer);
+
+            string response = Encoding.ASCII.GetString(buffer, 0, receivedLength);
+
+            return response;
+        }
+
+        private void CloseNotifyChannel()
+        {
+            this.ClientReceiverSocket.Shutdown(SocketShutdown.Both);
+            this.ClientReceiverSocket.Close();
         }
 
         public void Dispose()
         {
-            Socket.Shutdown(SocketShutdown.Both);
-            Socket.Close();
+            ClientTransmitterSocket.Shutdown(SocketShutdown.Both);
+            ClientTransmitterSocket.Close();
         }
     }
 }

@@ -34,16 +34,20 @@ namespace Gap.Win
             this.Logout();
         }
 
-        private Socket serverSocket;
+        private Socket transmitterSocket;
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
             var name = txtUsername.Text;
 
-            serverSocket = Connect();
+            this.transmitterSocket = Connect();
+
+            this.receiverSocket = InitialReceiverSocket();
+            int receiverPort = ((IPEndPoint)receiverSocket.LocalEndPoint).Port;
+            new Thread(this.HandleServerNotifies).Start();
+            IntroReceiverPort(receiverPort);
 
             Login(name);
-
             UpdateOnlineUsers();
 
             //new Thread(this.UpdateOnlineUsersThreadMethod).Start();
@@ -128,15 +132,100 @@ namespace Gap.Win
         {
             byte[] buffer = Encoding.ASCII.GetBytes(request);
 
-            serverSocket.Send(buffer);
+            this.transmitterSocket.Send(buffer);
 
             buffer = new byte[1024];
 
-            int receivedLength = serverSocket.Receive(buffer);
+            int receivedLength = this.transmitterSocket.Receive(buffer);
 
             string response = Encoding.ASCII.GetString(buffer, 0, receivedLength);
 
             return response;
         }
+
+        //Notify
+
+        private Socket receiverSocket;
+
+        private Socket serverTransmitterSocket;
+
+        private static Socket InitialReceiverSocket()
+        {
+            IPAddress clientIpAddress = IPAddress.Any;
+            IPEndPoint clientIpEndPoint = new IPEndPoint(clientIpAddress, 0);
+            Socket clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+
+            clientSocket.Bind(clientIpEndPoint);
+            clientSocket.Listen(1);
+
+            return clientSocket;
+        }
+
+        private void HandleServerNotifies()
+        {
+            this.serverTransmitterSocket = this.receiverSocket.Accept();
+
+            string notifyName;
+
+            do
+            {
+                notifyName = this.ProcessNotify();
+            }
+            while (notifyName != "bye");
+
+            this.serverTransmitterSocket.Shutdown(SocketShutdown.Both);
+            this.serverTransmitterSocket.Close();
+
+            this.receiverSocket.Shutdown(SocketShutdown.Both);
+            this.receiverSocket.Close();
+        }
+
+        public string ProcessNotify()
+        {
+            byte[] buffer = new byte[1024];
+
+            int messageLength = this.serverTransmitterSocket.Receive(buffer, SocketFlags.None);
+
+            string[] notifyParts = Encoding.ASCII.GetString(buffer, 0, messageLength).Split(';');
+
+            string
+                notifyName = notifyParts[0],
+                notifyParameter = notifyParts[1];
+
+            string response = "OK";
+
+            switch (notifyName)
+            {
+                case "debug":
+                    Console.WriteLine("Server has sent a debug message: {0}", notifyParameter);
+                    break;
+                case "bye":
+                    Console.WriteLine("Server wants to finish this session.");
+                    break;
+                //case "getOnlineUsers":
+                //    response = this.GetOnlineUsers();
+                //    break;
+                //case "logout":
+                //    this.Logout();
+                //    break;
+                //case "IntroReceiverPort":
+                //    int clientReceiverPort = int.Parse(notifyParameter);
+                //    ConnectToClient(clientReceiverPort);
+                //    break;
+            }
+
+
+            buffer = Encoding.ASCII.GetBytes(response);
+
+            this.serverTransmitterSocket.Send(buffer);
+
+            return notifyName;
+        }
+
+        private void IntroReceiverPort(int receiverPort)
+        {
+            this.SendRequest(MakeCommand("IntroReceiverPort", receiverPort.ToString()));
+        }
+
     }
 }
