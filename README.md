@@ -2,12 +2,12 @@ Gap
 ===
 "Gap" chat system
 
-Gap is a practical chat system wich can help you to understand
+Gap is a practical chat system which can help you to understand
 network programming basics, client/server model, etc
 by looking source code and make your changes and see what happens!
 
-If you made a new feature or an improvement, you can share that with
-other and also if you were interested, you can learn how to use
+If you make a new feature or an improvement, you can share it with
+others. Also if you were interested, you can learn how to use
 source control systems (e.g. git) to do so.
 
 To get started:
@@ -27,6 +27,8 @@ To get started:
 	\Project\Gap.Server\bin\Debug\Gap.Server.exe
 	\Project\Gap.Win\bin\Debug\Gap.Win.exe
 
-	
+
 If you face any problems, feel free to contact me at ahmadi.dt@gmail
 or create new issue.
+
+Special thanks to Duncan for helping to edit the english in this document.
