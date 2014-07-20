@@ -39,8 +39,6 @@ namespace Gap.Network
                 //clientThread.Start();
 
                 Task.Run(() => OnClientConnected(clientConnectedEventArgs));
-
-                Console.WriteLine("Client accepted from {0}", tcpClient.Client.RemoteEndPoint);
             }
         }
 

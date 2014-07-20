@@ -19,7 +19,7 @@ namespace Gap.Server
 
         static void ServerClientConnected(object sender, ClientConnectedEventArgs e)
         {
-            Console.WriteLine("Client accepted from {0} - Event", e.TcpClient.Client.RemoteEndPoint);
+            Console.WriteLine("Client accepted from {0}", e.TcpClient.Client.RemoteEndPoint);
 
             using (var user = new User(e.TcpClient.Client))
             {
