@@ -50,10 +50,7 @@ namespace Gap.Server
             //Test notify!
             this.SendNotifyToClient(ClientReceiverSocket, "debug", "You are now Online!\nWelcome my good client... :)");
 
-            foreach (var onlineUser in OnlineUsers)
-            {
-                this.SendNotifyToClient(onlineUser.ClientReceiverSocket, "getOnlineUsers", this.GetOnlineUsers());
-            }
+            BroadCastUserChange();
         }
 
         public void Logout()
@@ -66,11 +63,8 @@ namespace Gap.Server
 
             //Send bye notify!
             this.SendNotifyToClient(ClientReceiverSocket, "bye");
-        }
 
-        public string[] GetOnlineUsers()
-        {
-            return OnlineUsers.Where(x => x.Name != this.Name).Select(x => x.Name).ToArray();
+            BroadCastUserChange();
         }
 
         public void ProcessRequest()
@@ -85,7 +79,7 @@ namespace Gap.Server
                     this.Login(requestMessage.Parameters[0]);
                     break;
                 case "getOnlineUsers":
-                    responseMessage.Parameters = this.GetOnlineUsers();
+                    responseMessage.Parameters = OnlineUsersButMe().Select(x => x.Name).ToArray();
                     break;
                 case "logout":
                     this.Logout();
@@ -115,7 +109,24 @@ namespace Gap.Server
         {
             Message.Send(clientSocket, name, parameters);
 
-            Message.Receive(clientSocket);
+            var responseMessage = Message.Receive(clientSocket);
+        }
+
+        private void BroadCastUserChange()
+        {
+            var onlineUsersButMe = OnlineUsersButMe();
+
+            foreach (var onlineUser in onlineUsersButMe)
+            {
+                var onlineUsersButIt = OnlineUsers.Where(x => x.Name != onlineUser.Name).Select(x => x.Name).ToArray();
+
+                this.SendNotifyToClient(onlineUser.ClientReceiverSocket, "getOnlineUsers", onlineUsersButIt);
+            }
+        }
+
+        private List<User> OnlineUsersButMe()
+        {
+            return OnlineUsers.Where(x => x.Name != this.Name).ToList();
         }
 
         public void Dispose()

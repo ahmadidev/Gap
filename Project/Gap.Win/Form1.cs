@@ -33,17 +33,35 @@ namespace Gap.Win
             this.Logout();
         }
 
-        private Socket transmitterSocket;
+        private Socket _transmitterSocket;
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
+            //var clientThread = new Thread(StartClient);
+            //clientThread.Name = "Client_clientThread";
+            //clientThread.IsBackground = true;
+            //clientThread.Start();
+
+            Task.Run(() => StartClient());
+        }
+
+        private void StartClient()
+        {
             var name = txtUsername.Text;
 
-            this.transmitterSocket = Connect();
+            this._transmitterSocket = Connect();
 
             this.receiverSocket = InitialReceiverSocket();
             int receiverPort = ((IPEndPoint)receiverSocket.LocalEndPoint).Port;
-            new Thread(this.HandleServerNotifies).Start();
+
+
+            //var notifyThread = new Thread(this.HandleServerNotifies);
+            //notifyThread.Name = "Client_notifyThread";
+            //notifyThread.IsBackground = true;
+            //notifyThread.Start();
+
+            Task.Run(()=> HandleServerNotifies());
+
             IntroReceiverPort(receiverPort);
 
             Login(name);
@@ -53,6 +71,9 @@ namespace Gap.Win
         private void btnDisconnect_Click(object sender, EventArgs e)
         {
             this.Logout();
+
+            lbLogs.Items.Clear();
+            lbOnlineUsers.Items.Clear();
         }
 
         private void UpdateOnlineUsers()
@@ -64,20 +85,25 @@ namespace Gap.Win
 
         private void DisplayOnlineUsers(string[] onlineUsers)
         {
-            //if (lbOnlineUsers.InvokeRequired)
-            //{
-            //    lbOnlineUsers.Invoke(new MethodInvoker(() => this.DisplayOnlineUsers(onlineUsers)));
-            //    return;
-            //}
+            if (lbOnlineUsers.InvokeRequired)
+            {
+                lbOnlineUsers.Invoke(new MethodInvoker(() => this.DisplayOnlineUsers(onlineUsers)));
+                return;
+            }
 
-            this.AddLog("New user loggedin:");
-            //lbOnlineUsers.Items.Clear();
+            lbOnlineUsers.Items.Clear();
             foreach (var onlineUserName in onlineUsers)
             {
-                //this.lbOnlineUsers.Items.Add(onlineUserName);
-
-                this.AddLog(onlineUserName);
+                this.lbOnlineUsers.Items.Add(onlineUserName);
             }
+
+
+            //this.AddLog("New user loggedin:");
+
+            //foreach (var onlineUserName in onlineUsers)
+            //{
+            //    this.AddLog(onlineUserName);
+            //}
         }
 
         private static Socket Connect()
@@ -101,11 +127,13 @@ namespace Gap.Win
 
         private void Logout()
         {
-            if (this.transmitterSocket != null && this.transmitterSocket.Connected)
+            if (this._transmitterSocket != null && this._transmitterSocket.Connected)
             {
-                this.SendRequest("logout");
-
-                this.CloseSockets();
+                Task.Run(() =>
+                {
+                    this.SendRequest("logout");
+                    this.CloseSockets();
+                });
             }
         }
 
@@ -113,7 +141,7 @@ namespace Gap.Win
         {
             //this.transmitterSocket.Shutdown(SocketShutdown.Both);
             //this.transmitterSocket.Disconnect(false);
-            this.transmitterSocket.Dispose();
+            //this._transmitterSocket.Dispose();
         }
 
         private Gap.Network.Message SendRequest(string requestName, string parameter)
@@ -132,9 +160,9 @@ namespace Gap.Win
 
         private Gap.Network.Message SendRequest(Gap.Network.Message requestMessage)
         {
-            Gap.Network.Message.Send(transmitterSocket, requestMessage);
+            Gap.Network.Message.Send(_transmitterSocket, requestMessage);
 
-            return Gap.Network.Message.Receive(transmitterSocket);
+            return Gap.Network.Message.Receive(_transmitterSocket);
         }
 
         //Notify
@@ -206,11 +234,15 @@ namespace Gap.Win
 
         private void AddLog(string log)
         {
-            Console.WriteLine(log);
-            //if (lbLogs.InvokeRequired)
-            //{
-            //    lbLogs.Invoke(new MethodInvoker(() => this.AddLog(log)));
-            //}
+            //Console.WriteLine(log);
+            if (lbLogs.InvokeRequired)
+            {
+                lbLogs.Invoke(new MethodInvoker(() => this.AddLog(log)));
+            }
+            else
+            {
+                lbLogs.Items.Add(log);
+            }
         }
     }
 }

@@ -34,9 +34,11 @@ namespace Gap.Network
 
                 var clientConnectedEventArgs = new ClientConnectedEventArgs { TcpClient = tcpClient };
 
-                Thread clientThread = new Thread(() => OnClientConnected(clientConnectedEventArgs));
+                //Thread clientThread = new Thread(() => OnClientConnected(clientConnectedEventArgs));
+                //clientThread.Name = "Server_clientThread";
+                //clientThread.Start();
 
-                clientThread.Start();
+                Task.Run(() => OnClientConnected(clientConnectedEventArgs));
 
                 Console.WriteLine("Client accepted from {0}", tcpClient.Client.RemoteEndPoint);
             }
