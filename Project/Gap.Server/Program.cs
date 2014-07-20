@@ -1,45 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Gap.Server
 {
-    using System.Diagnostics;
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Threading;
+    using Gap.Network;
 
     internal class Program
     {
+        private static Server server;
+
         private static void Main(string[] args)
         {
-            IPAddress serverIpAddress = IPAddress.Any;
-            const int ServerPort = 23605;
-            IPEndPoint serverIpEndPoint = new IPEndPoint(serverIpAddress, ServerPort);
-            Socket serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            server = new Server();
 
-            serverSocket.Bind(serverIpEndPoint);
-            serverSocket.Listen(5);
+            server.ClientConnected += ServerClientConnected;
 
-            Console.WriteLine("Server is running on {0}", serverIpEndPoint);
-
-            while (true)
-            {
-                Socket clientSocket = serverSocket.Accept();
-
-                Thread clientThread = new Thread(() => HandleClient(clientSocket));
-
-                clientThread.Start();
-
-                Console.WriteLine("Client accepted from {0}", clientSocket.RemoteEndPoint);
-            }
+            server.Start();
         }
 
-        private static void HandleClient(Socket socket)
+        static void ServerClientConnected(object sender, ClientConnectedEventArgs e)
         {
-            using (var user = new User(socket))
+            Console.WriteLine("Client accepted from {0} - Event", e.TcpClient.Client.RemoteEndPoint);
+
+            using (var user = new User(e.TcpClient.Client))
             {
                 do
                 {
@@ -49,161 +31,6 @@ namespace Gap.Server
 
                 Console.WriteLine("{0} is disconnected.", user.Name);
             }
-
-        }
-    }
-
-    class User : IDisposable
-    {
-        public enum UserStatus
-        {
-            Connected,
-            Loggedin,
-            Loggedout,
-            //Disconnected            
-        }
-
-        private static readonly List<User> OnlineUsers = new List<User>();
-
-        public string Name { get; set; }
-
-        public Socket ClientTransmitterSocket { get; set; }
-
-        public UserStatus Status { get; set; }
-
-        public User(Socket socket)
-        {
-            this.Status = UserStatus.Connected;
-            this.ClientTransmitterSocket = socket;
-
-            OnlineUsers.Add(this);
-        }
-
-        public void Login(string name)
-        {
-            this.Status = UserStatus.Loggedin;
-            this.Name = name;
-
-            var user = OnlineUsers.Single(x => Equals(x.ClientTransmitterSocket, this.ClientTransmitterSocket));
-            user.Name = name;
-
-            Console.WriteLine("{0} is loggedin.", user.Name);
-
-            //Test notify!
-            this.SendNotifyToClient(MakeNotifyCommand("debug", "You are now Online!\nWelcome my good client... :)"));
-        }
-
-        public void Logout()
-        {
-            var user = OnlineUsers.Single(x => x.Name == Name);
-            OnlineUsers.Remove(user);
-
-            this.Status = UserStatus.Loggedout;
-
-
-            //Send bye notify!
-            this.SendNotifyToClient(MakeNotifyCommand("bye", ""));
-
-            CloseNotifyChannel();
-        }
-
-        public string GetOnlineUsers()
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-
-            var onlineUsers = OnlineUsers.Where(x => x.Name != this.Name).ToList();
-
-            if (!onlineUsers.Any())
-                return "empty";
-
-            foreach (var onlineUser in onlineUsers)
-            {
-                stringBuilder.Append(onlineUser.Name + ';');
-            }
-
-            return stringBuilder.ToString().TrimEnd(';');
-        }
-
-        public void ProcessRequest()
-        {
-            byte[] buffer = new byte[1024];
-
-            int messageLength = this.ClientTransmitterSocket.Receive(buffer, SocketFlags.None);
-
-            string[] requestParts = Encoding.ASCII.GetString(buffer, 0, messageLength).Split(';');
-
-            string
-                requestName = requestParts[0],
-                requestParameter = requestParts[1];
-
-            string response = "OK";
-
-            switch (requestName)
-            {
-                case "login":
-                    this.Login(requestParameter);
-                    break;
-                case "getOnlineUsers":
-                    response = this.GetOnlineUsers();
-                    break;
-                case "logout":
-                    this.Logout();
-                    break;
-                case "IntroReceiverPort":
-                    int clientReceiverPort = int.Parse(requestParameter);
-                    ConnectToClient(clientReceiverPort);
-                    break;
-            }
-
-
-            buffer = Encoding.ASCII.GetBytes(response);
-
-            ClientTransmitterSocket.Send(buffer);
-        }
-
-        //Notify
-
-        public Socket ClientReceiverSocket { get; set; }
-
-        private void ConnectToClient(int clientReceiverPort)
-        {
-            IPAddress clientReceiverSocketIp = ((IPEndPoint)this.ClientTransmitterSocket.LocalEndPoint).Address;
-            IPEndPoint clientReceiverSocketIpEndPoint = new IPEndPoint(clientReceiverSocketIp, clientReceiverPort);
-
-            this.ClientReceiverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            this.ClientReceiverSocket.Connect(clientReceiverSocketIpEndPoint);
-        }
-
-        private static string MakeNotifyCommand(string name, string param)
-        {
-            return string.Format("{0};{1}", name, param);
-        }
-
-        private string SendNotifyToClient(string notifyCommand)
-        {
-            byte[] buffer = Encoding.ASCII.GetBytes(notifyCommand);
-
-            this.ClientReceiverSocket.Send(buffer);
-
-            buffer = new byte[1024];
-
-            int receivedLength = this.ClientReceiverSocket.Receive(buffer);
-
-            string response = Encoding.ASCII.GetString(buffer, 0, receivedLength);
-
-            return response;
-        }
-
-        private void CloseNotifyChannel()
-        {
-            this.ClientReceiverSocket.Shutdown(SocketShutdown.Both);
-            this.ClientReceiverSocket.Close();
-        }
-
-        public void Dispose()
-        {
-            ClientTransmitterSocket.Shutdown(SocketShutdown.Both);
-            ClientTransmitterSocket.Close();
         }
     }
 }

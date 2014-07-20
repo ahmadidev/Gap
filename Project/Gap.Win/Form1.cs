@@ -13,13 +13,12 @@ namespace Gap.Win
     using System.Diagnostics;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Windows.Forms.VisualStyles;
 
     public partial class Form1 : Form
     {
-        private string clientName;
-
         public Form1()
         {
             InitializeComponent();
@@ -49,23 +48,11 @@ namespace Gap.Win
 
             Login(name);
             UpdateOnlineUsers();
-
-            //new Thread(this.UpdateOnlineUsersThreadMethod).Start();
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
         {
             this.Logout();
-        }
-
-        private void UpdateOnlineUsersThreadMethod()
-        {
-            while (true)
-            {
-                this.UpdateOnlineUsers();
-
-                Thread.Sleep(500);
-            }
         }
 
         private void UpdateOnlineUsers()
@@ -77,70 +64,77 @@ namespace Gap.Win
 
         private void DisplayOnlineUsers(string[] onlineUsers)
         {
-            if (lbOnlineUsers.InvokeRequired)
-            {
-                lbOnlineUsers.Invoke(new MethodInvoker(() => this.DisplayOnlineUsers(onlineUsers)));
-                return;
-            }
+            //if (lbOnlineUsers.InvokeRequired)
+            //{
+            //    lbOnlineUsers.Invoke(new MethodInvoker(() => this.DisplayOnlineUsers(onlineUsers)));
+            //    return;
+            //}
 
-            lbOnlineUsers.Items.Clear();
+            this.AddLog("New user loggedin:");
+            //lbOnlineUsers.Items.Clear();
             foreach (var onlineUserName in onlineUsers)
             {
-                this.lbOnlineUsers.Items.Add(onlineUserName);
+                //this.lbOnlineUsers.Items.Add(onlineUserName);
+
+                this.AddLog(onlineUserName);
             }
         }
 
         private static Socket Connect()
         {
-            IPAddress serverIpAddress = IPAddress.Loopback;
-            const int ServerPort = 23605;
-            IPEndPoint serverIpEndPoint = new IPEndPoint(serverIpAddress, ServerPort);
-            Socket serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            TcpClient tcpClient = new TcpClient();
 
-            serverSocket.Connect(serverIpEndPoint);
-            return serverSocket;
+            tcpClient.Connect(Gap.Network.Configuration.ServerAddress, Gap.Network.Configuration.ServerPort);
+
+            return tcpClient.Client;
         }
 
         private string[] GetOnlineUsers()
         {
-            string response = this.SendRequest(MakeCommand("getOnlineUsers", string.Empty));
-
-            if (response == "empty")
-                return new string[0];
-
-            string[] onlineUsers = response.Split(';').Where(x => !string.IsNullOrEmpty(x)).ToArray();
-
-            return onlineUsers;
+            return this.SendRequest("getOnlineUsers").Parameters;
         }
 
         private void Login(string name)
         {
-            this.SendRequest(MakeCommand("login", name));
+            this.SendRequest("login", name);
         }
 
         private void Logout()
         {
-            this.SendRequest(MakeCommand("logout", string.Empty));
+            if (this.transmitterSocket != null && this.transmitterSocket.Connected)
+            {
+                this.SendRequest("logout");
+
+                this.CloseSockets();
+            }
         }
 
-        private static string MakeCommand(string name, string param)
+        private void CloseSockets()
         {
-            return string.Format("{0};{1}", name, param);
+            //this.transmitterSocket.Shutdown(SocketShutdown.Both);
+            //this.transmitterSocket.Disconnect(false);
+            this.transmitterSocket.Dispose();
         }
 
-        private string SendRequest(string request)
+        private Gap.Network.Message SendRequest(string requestName, string parameter)
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(request);
+            var requestMessage = new Gap.Network.Message { Name = requestName, Parameters = new string[] { parameter } };
 
-            this.transmitterSocket.Send(buffer);
+            return SendRequest(requestMessage);
+        }
 
-            buffer = new byte[1024];
+        private Gap.Network.Message SendRequest(string requestName)
+        {
+            var requestMessage = new Gap.Network.Message { Name = requestName };
 
-            int receivedLength = this.transmitterSocket.Receive(buffer);
+            return SendRequest(requestMessage);
+        }
 
-            string response = Encoding.ASCII.GetString(buffer, 0, receivedLength);
+        private Gap.Network.Message SendRequest(Gap.Network.Message requestMessage)
+        {
+            Gap.Network.Message.Send(transmitterSocket, requestMessage);
 
-            return response;
+            return Gap.Network.Message.Receive(transmitterSocket);
         }
 
         //Notify
@@ -151,14 +145,10 @@ namespace Gap.Win
 
         private static Socket InitialReceiverSocket()
         {
-            IPAddress clientIpAddress = IPAddress.Any;
-            IPEndPoint clientIpEndPoint = new IPEndPoint(clientIpAddress, 0);
-            Socket clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            TcpListener clienTcpListener = new TcpListener(IPAddress.Loopback, 0);
+            clienTcpListener.Start(1);
 
-            clientSocket.Bind(clientIpEndPoint);
-            clientSocket.Listen(1);
-
-            return clientSocket;
+            return clienTcpListener.Server;
         }
 
         private void HandleServerNotifies()
@@ -173,38 +163,28 @@ namespace Gap.Win
             }
             while (notifyName != "bye");
 
-            this.serverTransmitterSocket.Shutdown(SocketShutdown.Both);
+            //this.serverTransmitterSocket.Shutdown(SocketShutdown.Both);
             this.serverTransmitterSocket.Close();
 
-            this.receiverSocket.Shutdown(SocketShutdown.Both);
+            //this.receiverSocket.Shutdown(SocketShutdown.Both);
             this.receiverSocket.Close();
         }
 
         public string ProcessNotify()
         {
-            byte[] buffer = new byte[1024];
+            var responseMessage = Gap.Network.Message.Receive(serverTransmitterSocket);
 
-            int messageLength = this.serverTransmitterSocket.Receive(buffer, SocketFlags.None);
-
-            string[] notifyParts = Encoding.ASCII.GetString(buffer, 0, messageLength).Split(';');
-
-            string
-                notifyName = notifyParts[0],
-                notifyParameter = notifyParts[1];
-
-            string response = "OK";
-
-            switch (notifyName)
+            switch (responseMessage.Name)
             {
                 case "debug":
-                    Console.WriteLine("Server has sent a debug message: {0}", notifyParameter);
+                    AddLog(string.Format("Server has sent a debug message: {0}", responseMessage.Parameters[0]));
                     break;
                 case "bye":
-                    Console.WriteLine("Server wants to finish this session.");
+                    AddLog("Server wants to finish this session");
                     break;
-                //case "getOnlineUsers":
-                //    response = this.GetOnlineUsers();
-                //    break;
+                case "getOnlineUsers":
+                    this.DisplayOnlineUsers(responseMessage.Parameters);
+                    break;
                 //case "logout":
                 //    this.Logout();
                 //    break;
@@ -214,18 +194,23 @@ namespace Gap.Win
                 //    break;
             }
 
+            Gap.Network.Message.Send(serverTransmitterSocket, "OK");
 
-            buffer = Encoding.ASCII.GetBytes(response);
-
-            this.serverTransmitterSocket.Send(buffer);
-
-            return notifyName;
+            return responseMessage.Name;
         }
 
         private void IntroReceiverPort(int receiverPort)
         {
-            this.SendRequest(MakeCommand("IntroReceiverPort", receiverPort.ToString()));
+            this.SendRequest("IntroReceiverPort", receiverPort.ToString());
         }
 
+        private void AddLog(string log)
+        {
+            Console.WriteLine(log);
+            //if (lbLogs.InvokeRequired)
+            //{
+            //    lbLogs.Invoke(new MethodInvoker(() => this.AddLog(log)));
+            //}
+        }
     }
 }

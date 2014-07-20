@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gap.Win", "Gap.Win\Gap.Win.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gap.Server", "Gap.Server\Gap.Server.csproj", "{C3B87310-CD5A-4CF0-8A94-945617561680}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gap.Network", "Gap.Network\Gap.Network.csproj", "{3C9B6C10-7ABB-4F45-8B6A-38649AB46F3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{C3B87310-CD5A-4CF0-8A94-945617561680}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3B87310-CD5A-4CF0-8A94-945617561680}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3B87310-CD5A-4CF0-8A94-945617561680}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C9B6C10-7ABB-4F45-8B6A-38649AB46F3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C9B6C10-7ABB-4F45-8B6A-38649AB46F3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C9B6C10-7ABB-4F45-8B6A-38649AB46F3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C9B6C10-7ABB-4F45-8B6A-38649AB46F3B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
