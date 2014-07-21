@@ -21,11 +21,12 @@ To get started:
 
 3- Compile whole solution.
 
-4- To run project, browse to Debug/Bin folder of each project
-	and run executable files wich named as project.
+4- To run project, run following files:
 	
-	\Project\Gap.Server\bin\Debug\Gap.Server.exe
-	\Project\Gap.Win\bin\Debug\Gap.Win.exe
+	\Project\Release\Gap.Server.exe
+	\Project\Release\Gap.Win.exe
+
+To change default Serve IP Address, take a look in Gap.Server.exe.config.
 
 
 If you face any problems, feel free to contact me at ahmadi.dt@gmail
