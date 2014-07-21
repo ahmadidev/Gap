@@ -17,6 +17,8 @@ namespace Gap.Win
     using System.Threading;
     using System.Windows.Forms.VisualStyles;
 
+    using Gap.Network;
+
     public partial class Form1 : Form
     {
         public Form1()
@@ -60,7 +62,7 @@ namespace Gap.Win
             //notifyThread.IsBackground = true;
             //notifyThread.Start();
 
-            Task.Run(()=> HandleServerNotifies());
+            Task.Run(() => HandleServerNotifies());
 
             IntroReceiverPort(receiverPort);
 
@@ -110,7 +112,9 @@ namespace Gap.Win
         {
             TcpClient tcpClient = new TcpClient();
 
-            tcpClient.Connect(Gap.Network.Configuration.ServerAddress, Gap.Network.Configuration.ServerPort);
+            Configuration configuration = Configuration.Load();
+
+            tcpClient.Connect(configuration.ServerAddress, configuration.ServerPort);
 
             return tcpClient.Client;
         }
@@ -173,7 +177,7 @@ namespace Gap.Win
 
         private static Socket InitialReceiverSocket()
         {
-            TcpListener clienTcpListener = new TcpListener(IPAddress.Loopback, 0);
+            TcpListener clienTcpListener = new TcpListener(IPAddress.Any, 0);
             clienTcpListener.Start(1);
 
             return clienTcpListener.Server;

@@ -15,13 +15,20 @@ namespace Gap.Network
     {
         public event ClientConnectedEventHandler ClientConnected;
 
-        private readonly TcpListener tcpListener = new TcpListener(Configuration.ServerAddress, Configuration.ServerPort);
+        private readonly Configuration configuration = Configuration.Load();
+
+        private readonly TcpListener tcpListener;
+
+        public Server()
+        {
+            tcpListener = new TcpListener(configuration.ServerAddress, configuration.ServerPort);
+        }
 
         public void Start()
         {
             this.tcpListener.Start(5);
 
-            Console.WriteLine("Server is running on {0}:{1}", Configuration.ServerAddress, Configuration.ServerPort);
+            Console.WriteLine("Server is running on {0}:{1}", configuration.ServerAddress, configuration.ServerPort);
 
             this.HandleConnections();
         }

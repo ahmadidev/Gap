@@ -97,7 +97,7 @@ namespace Gap.Server
 
         private void ConnectToClient(int clientReceiverPort)
         {
-            IPAddress clientReceiverSocketIp = ((IPEndPoint)this.ClientTransmitterSocket.LocalEndPoint).Address;
+            IPAddress clientReceiverSocketIp = ((IPEndPoint)this.ClientTransmitterSocket.RemoteEndPoint).Address;
 
             TcpClient clientTcpClient = new TcpClient();
             clientTcpClient.Connect(clientReceiverSocketIp, clientReceiverPort);
