@@ -71,6 +71,7 @@
             this.lbOnlineUsers.Name = "lbOnlineUsers";
             this.lbOnlineUsers.Size = new System.Drawing.Size(257, 95);
             this.lbOnlineUsers.TabIndex = 3;
+            this.lbOnlineUsers.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbOnlineUsers_MouseDoubleClick);
             // 
             // lblOnlineUsers
             // 

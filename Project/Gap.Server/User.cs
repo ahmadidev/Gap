@@ -88,6 +88,9 @@ namespace Gap.Server
                     int clientReceiverPort = int.Parse(requestMessage.Parameters[0]);
                     ConnectToClient(clientReceiverPort);
                     break;
+                case "message":
+                    SendMessage(requestMessage.Parameters[0], requestMessage.Parameters[1]);
+                    break;
             }
 
             Message.Send(ClientTransmitterSocket, responseMessage);
@@ -127,6 +130,13 @@ namespace Gap.Server
         private List<User> OnlineUsersButMe()
         {
             return OnlineUsers.Where(x => x.Name != this.Name).ToList();
+        }
+
+        private void SendMessage(string toUsername, string message)
+        {
+            var toUser = OnlineUsers.First(x => x.Name == toUsername);
+
+            this.SendNotifyToClient(toUser.ClientReceiverSocket, "message", Name, message);
         }
 
         public void Dispose()

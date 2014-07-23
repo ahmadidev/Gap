@@ -28,6 +28,9 @@ namespace Gap.Win
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            //Test Chat
+
+            //lbOnlineUsers.Items.Add("Hakan");
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -169,6 +172,17 @@ namespace Gap.Win
             return Gap.Network.Message.Receive(_transmitterSocket);
         }
 
+        public void SendMessage(string toUsername, string message)
+        {
+            var requestMessage = new Gap.Network.Message
+                                 {
+                                     Name = "message",
+                                     Parameters = new string[] { toUsername, message }
+                                 };
+
+            SendRequest(requestMessage);
+        }
+
         //Notify
 
         private Socket receiverSocket;
@@ -217,6 +231,11 @@ namespace Gap.Win
                 case "getOnlineUsers":
                     this.DisplayOnlineUsers(responseMessage.Parameters);
                     break;
+                case "message":
+                    this.Invoke(
+                        new Action(
+                            () => SendMessageToForm(responseMessage.Parameters[0], responseMessage.Parameters[1])));
+                    break;
                 //case "logout":
                 //    this.Logout();
                 //    break;
@@ -247,6 +266,54 @@ namespace Gap.Win
             {
                 lbLogs.Items.Add(log);
             }
+        }
+
+        //Chat form
+
+        List<ChatForm> chatForms = new List<ChatForm>();
+
+        private void lbOnlineUsers_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (lbOnlineUsers.SelectedItem == null)
+                return;
+
+            string username = lbOnlineUsers.SelectedItem.ToString();
+
+            ShowChatForm(username);
+        }
+
+        private void SendMessageToForm(string senderUsername, string message)
+        {
+            var chatForm = this.ShowChatForm(senderUsername);
+
+            chatForm.AddMessage(senderUsername, message);
+        }
+
+        private ChatForm ShowChatForm(string senderUsername)
+        {
+            ChatForm chatForm = chatForms.FirstOrDefault(x => x.Text == senderUsername);
+
+            if (chatForm != null)
+            {
+                chatForm.Focus();
+            }
+            else
+            {
+                chatForm = new ChatForm();
+
+                chatForms.Add(chatForm);
+
+                chatForm.Text = senderUsername;
+
+                chatForm.MainForm = this;
+                chatForm.OwnerUsername = txtUsername.Text;
+
+                chatForm.StartPosition = FormStartPosition.Manual;
+                chatForm.Location = new Point(this.Location.X, this.Location.Y + this.Size.Height / 2);
+                chatForm.Show();
+            }
+
+            return chatForm;
         }
     }
 }
