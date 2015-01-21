@@ -29,7 +29,7 @@ To get started:
 To change default Serve IP Address, take a look in Gap.Server.exe.config.
 
 
-If you face any problems, feel free to contact me at ahmadi.dt@gmail
+If you face any problems, feel free to contact me at hakan648 at yahoo
 or create new issue.
 
 Special thanks to Duncan for helping to edit the english in this document.
